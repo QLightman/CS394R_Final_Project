@@ -11,6 +11,7 @@ import wrapped_flappy_bird as game
 import random
 import numpy as np
 from collections import deque
+pygame.init()
 
 GAME = 'bird' # the name of the game being played for log files
 ACTIONS = 2 # number of valid actions
