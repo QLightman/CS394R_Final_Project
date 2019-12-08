@@ -1,9 +1,11 @@
-# Using RL to Learn How To Play Flappy Bird
+# Using Deep Q-Network to Learn How To Play Flappy Bird
+
+<img src="./images/flappy_bird_demp.gif" width="250">
+
+7 mins version: [DQN for flappy bird](https://www.youtube.com/watch?v=THhUXIhjkCM)
 
 ## Overview
-This project integrates DQN, double DQN, Dueling DQN, and prioritized replay to play Flappy Bird.
-
-And it also tries to use Asynchronous actor-critic to play Flappy Bird, but find it diverges.
+This project follows the description of the Deep Q Learning algorithm described in Playing Atari with Deep Reinforcement Learning [2] and shows that this learning algorithm can be further generalized to the notorious Flappy Bird.
 
 ## Installation Dependencies:
 * Python 2.7 or 3
@@ -13,9 +15,9 @@ And it also tries to use Asynchronous actor-critic to play Flappy Bird, but find
 
 ## How to Run?
 ```
-git clone https://github.com/iGuaZi/RL_FlappyBird.git
-cd RL_FlappyBird
-python Double Dueling DQN.py
+git clone https://github.com/yenchenlin1994/DeepLearningFlappyBird.git
+cd DeepLearningFlappyBird
+python deep_q_network.py
 ```
 
 ## What is Deep Q-Network?
@@ -25,54 +27,27 @@ For those who are interested in deep reinforcement learning, I highly recommend 
 
 [Demystifying Deep Reinforcement Learning](http://www.nervanasys.com/demystifying-deep-reinforcement-learning/)
 
-## Double DQN
+## Deep Q-Network Algorithm
+
+The pseudo-code for the Deep Q Learning algorithm, as given in [1], can be found below:
 
 ```
-Initialize replay memory D to capacity N
-Initialize action-value function Q with random weights θ
-Initialize action-value function Q_target with random weights θ'
+Initialize replay memory D to size N
+Initialize action-value function Q with random weights
 for episode = 1, M do
     Initialize state s_1
     for t = 1, T do
         With probability ϵ select random action a_t
-        otherwise select a_t=max_a  Q(s_t,a; θ)
+        otherwise select a_t=max_a  Q(s_t,a; θ_i)
         Execute action a_t in emulator and observe r_t and s_(t+1)
         Store transition (s_t,a_t,r_t,s_(t+1)) in D
         Sample a minibatch of transitions (s_j,a_j,r_j,s_(j+1)) from D
         Set y_j:=
             r_j for terminal s_(j+1)
-            r_j+γ*max_(a^' )  Q(s_(j+1),a'; θ') for non-terminal s_(j+1)
-        Perform a gradient step on (y_j-Q(s_j,a_j; θ))^2 with respect to θ
+            r_j+γ*max_(a^' )  Q(s_(j+1),a'; θ_i) for non-terminal s_(j+1)
+        Perform a gradient step on (y_j-Q(s_j,a_j; θ_i))^2 with respect to θ
     end for
-    periodically update θ' = θ
 end for
-```
-
-## A3C
-
-```
-//Assume global shared parameter vectors θ and θ_v and global shared counter T = 0
-//Assume thread-specific parameter vectors θ' and θ_v'
-Initialize thread step counter t = 1
-repeat
-    Reset gradients: dθ = 0 and dθ_v = 0.
-    Synchronize thread-specific parameters θ' = θ and θ_v' = θ_v
-    t_start = t
-    Get state s_t
-    repeat
-        Perform a_t according to policy π(a_t|s_t; θ')
-        Receive reward r_t and new state s_{t+1}
-        t = t + 1
-        T = T + 1
-    until terminal s_t or t − tstart == tmax
-    R =  0 V (s_t; θ_v' ) for terminal for non-terminal s_t // Bootstrap from last state
-    for i \in {t − 1,..., t_start} do
-        R = r_i + γ * R
-        Accumulate gradients wrt θ': dθ = dθ + \Delta_{θ'} log π(a_i|s_i; θ')(R − V (s_i; θ_v' ))
-        Accumulate gradients wrt θ_v' : dθ_v = dθ_v + \Delta_{θ_v'} (R − V (s_i; θ_v' ))^2
-    end for
-    Perform asynchronous update of θ using dθ and of θ_v using dθ_v.
-until T > Tmax
 ```
 
 ## Experiments
@@ -106,20 +81,35 @@ However, in other games, initialize ϵ to 1 is more reasonable.
 
 During training time, at each time step, the network samples minibatches of size 32 from the replay memory to train on, and performs a gradient step on the loss function described above using the Adam optimization algorithm with a learning rate of 0.000001. After annealing finishes, the network continues to train indefinitely, with ϵ fixed at 0.001.
 
+## FAQ
+
+#### Checkpoint not found
+Change [first line of `saved_networks/checkpoint`](https://github.com/yenchenlin1994/DeepLearningFlappyBird/blob/master/saved_networks/checkpoint#L1) to 
+
+`model_checkpoint_path: "saved_networks/bird-dqn-2920000"`
+
+#### How to reproduce?
+1. Comment out [these lines](https://github.com/yenchenlin1994/DeepLearningFlappyBird/blob/master/deep_q_network.py#L108-L112)
+
+2. Modify `deep_q_network.py`'s parameter as follow:
+```python
+OBSERVE = 10000
+EXPLORE = 3000000
+FINAL_EPSILON = 0.0001
+INITIAL_EPSILON = 0.1
+```
+
 ## References
 
-[1] DQN. 《Playing Atari with Deep Reinforcement Learning》
+[1] Mnih Volodymyr, Koray Kavukcuoglu, David Silver, Andrei A. Rusu, Joel Veness, Marc G. Bellemare, Alex Graves, Martin Riedmiller, Andreas K. Fidjeland, Georg Ostrovski, Stig Petersen, Charles Beattie, Amir Sadik, Ioannis Antonoglou, Helen King, Dharshan Kumaran, Daan Wierstra, Shane Legg, and Demis Hassabis. **Human-level Control through Deep Reinforcement Learning**. Nature, 529-33, 2015.
 
-[2]Double DQN.《Deep Reinforcement Learning with Double Q-learning 》
+[2] Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Alex Graves, Ioannis Antonoglou, Daan Wierstra, and Martin Riedmiller. **Playing Atari with Deep Reinforcement Learning**. NIPS, Deep Learning workshop
 
-[3]Dueling DQN.《Dueling Network Architectures for Deep Reinforcement Learning 》
-
-[4]A3C.《Asynchronous Methods for Deep Reinforcement Learning 》
-
-[5]《Prioritized Experience Replay》
+[3] Kevin Chen. **Deep Reinforcement Learning for Flappy Bird** [Report](http://cs229.stanford.edu/proj2015/362_report.pdf) | [Youtube result](https://youtu.be/9WKBzTUsPKc)
 
 ## Disclaimer
 This work is highly based on the following repos:
 
-1. https://github.com/yenchenlin/DeepLearningFlappyBird
-2. https://github.com/openai/baselines
+1. [sourabhv/FlapPyBird] (https://github.com/sourabhv/FlapPyBird)
+2. [asrivat1/DeepLearningVideoGames](https://github.com/asrivat1/DeepLearningVideoGames)
+
