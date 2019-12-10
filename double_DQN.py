@@ -11,7 +11,6 @@ import wrapped_flappy_bird as game
 import random
 import numpy as np
 from collections import deque
-pygame.init()
 
 GAME = 'bird' # the name of the game being played for log files
 ACTIONS = 2 # number of valid actions
@@ -128,8 +127,7 @@ def trainNetwork(s, readout,s_2,readout_2, sess ):
     saver = tf.train.Saver()
     sess.run(tf.initialize_all_variables())
     checkpoint = tf.train.get_checkpoint_state("saved_networks")
-    
-
+   
     # start training
     epsilon = INITIAL_EPSILON
     t = 0
@@ -215,10 +213,10 @@ def trainNetwork(s, readout,s_2,readout_2, sess ):
         else:
             state = "train"
 
-        if( t%100 ==0):
-            print("TIMESTEP", t, "/ STATE", state, \
-                "/ EPSILON", epsilon, "/ ACTION", action_index, "/ REWARD", r_t, \
-                "/ Q_MAX %e" % np.max(readout_t))
+        # if( t%100 ==0):
+        print("TIMESTEP", t, "/ STATE", state, \
+            "/ EPSILON", epsilon, "/ ACTION", action_index, "/ REWARD", r_t, \
+            "/ Q_MAX %e" % np.max(readout_t))
         # write info to files
         '''
         if t % 10000 <= 100:
