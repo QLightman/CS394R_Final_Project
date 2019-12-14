@@ -77,21 +77,24 @@ def createNetwork(scope):
         readout = tf.matmul(h_fc1, W_fc2) + b_fc2
 
         return s, readout, h_fc1
-
+'''
+start of our code. Realize the function to update parameters of target network.
+'''
 def scope_vars(scope):
     return tf.get_collection(
         tf.GraphKeys.TRAINABLE_VARIABLES,
         scope=scope)
 
-def update_target(q_func_vars, target_q_func_vars):
-    # q_func_vars: list
-    # target_q_func_vars: list
-    update_target_expr = []
-    for var, var_target in zip(sorted(q_func_vars, key=lambda v: v.name),
-                               sorted(target_q_func_vars, key=lambda v: v.name)):
-        update_target_expr.append(var_target.assign(1e-5*var+(1-1e-5)*var_target))
-    update_target_expr = tf.group(*update_target_expr)
-    return update_target_expr
+def update_target(vars, target_vars):
+    update_target = []
+    for var, target_var in zip(sorted(vars, key=lambda v: v.name),
+                               sorted(target_vars, key=lambda v: v.name)):
+        update_target.append(target_var.assign(1e-3*var+(1-1e-3)*target_var))
+    update_target = tf.group(*update_target)
+    return update_target
+'''
+end of our code
+'''
 
 def trainNetwork(s, readout,s_2,readout_2, sess ):
     # define the cost function
@@ -157,6 +160,8 @@ def trainNetwork(s, readout,s_2,readout_2, sess ):
         ret, x_t1 = cv2.threshold(x_t1, 1, 255, cv2.THRESH_BINARY)
         x_t1 = np.reshape(x_t1, (80, 80, 1))
         #s_t1 = np.append(x_t1, s_t[:,:,1:], axis = 2)
+
+        '''New mechanism we introduced. The further from current timestamp, the darker.'''
         s_t1 = np.append(x_t1, [x*0.9 for x in s_t[:, :, :3]], axis=2)
 
         # store the transition in D
@@ -176,6 +181,7 @@ def trainNetwork(s, readout,s_2,readout_2, sess ):
             s_j1_batch = [d[3] for d in minibatch]
 
             y_batch = []
+            '''Use target model to avoid bootstrapping'''
             readout_j1_batch = readout_2.eval(feed_dict={s_2:s_j1_batch})
             action_index = np.argmax(readout.eval(feed_dict={s:s_j1_batch}),axis=1)
 
@@ -186,6 +192,7 @@ def trainNetwork(s, readout,s_2,readout_2, sess ):
                 if terminal:
                     y_batch.append(r_batch[i])
                 else:
+                    '''The target value becomes different.'''
                     y_batch.append(r_batch[i] + GAMMA * readout_j1_batch[i][action_index[i]])
 
             # perform gradient step
@@ -194,6 +201,7 @@ def trainNetwork(s, readout,s_2,readout_2, sess ):
                 a : a_batch,
                 s : s_j_batch}
             )
+            '''Update target network.'''
             sess.run(update_target(scope_vars("m1"),scope_vars("m2")))
 
         # update the old values
