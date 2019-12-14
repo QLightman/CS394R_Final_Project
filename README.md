@@ -75,4 +75,6 @@ This work is highly based on the following repos:
 
 1. [yenchenlin/DeepLearningFlappyBird](https://github.com/yenchenlin/DeepLearningFlappyBird)
 
+The code we modify is in double_DQN.py which implements deep learning model and reinforcement learning algorithm. Other files are the basic implementation of Flappy Bird game itself so we directly copy it as infrastructure. The modifications are labeled by comments.
+
 
